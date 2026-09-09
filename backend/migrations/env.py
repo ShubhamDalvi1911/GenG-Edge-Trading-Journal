@@ -13,7 +13,21 @@ from app.models import account, notification, trade, user
 
 config = context.config
 settings = get_settings()
-config.set_main_option("sqlalchemy.url", settings.database_url.replace("%", "%%"))
+
+database_url = settings.database_url
+
+if database_url.startswith("postgresql://"):
+    database_url = database_url.replace(
+        "postgresql://",
+        "postgresql+psycopg://",
+        1
+    )
+
+config.set_main_option(
+    "sqlalchemy.url",
+    database_url.replace("%", "%%")
+)
+
 if config.config_file_name:
     fileConfig(config.config_file_name)
 
@@ -21,22 +35,23 @@ target_metadata = Base.metadata
 
 
 def run_migrations_offline() -> None:
-    context.configure(url=settings.database_url, target_metadata=target_metadata, literal_binds=True, dialect_opts={"paramstyle": "named"})
+    context.configure(
+        url=database_url,
+        target_metadata=target_metadata,
+        literal_binds=True,
+        dialect_opts={"paramstyle": "named"},
+    )
+
     with context.begin_transaction():
         context.run_migrations()
 
 
 def run_migrations_online() -> None:
-    database_url = settings.database_url
+    configuration = config.get_section(
+        config.config_ini_section,
+        {}
+    )
 
-    if database_url.startswith("postgresql://"):
-        database_url = database_url.replace(
-            "postgresql://",
-            "postgresql+psycopg://",
-            1
-        )
-
-    configuration = config.get_section(config.config_ini_section, {})
     configuration["sqlalchemy.url"] = database_url
 
     connectable = engine_from_config(
