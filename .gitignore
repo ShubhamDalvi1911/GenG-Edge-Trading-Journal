@@ -1,0 +1,72 @@
+# ==============================
+# Python
+# ==============================
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+
+.venv/
+venv/
+env/
+
+# Environment / secrets
+.env
+.env.*
+!.env.example
+
+# ==============================
+# Node / Frontend
+# ==============================
+node_modules/
+dist/
+frontend/dist/
+
+# Vite / local environment
+.env.local
+.env.*.local
+
+# Test / coverage
+coverage/
+
+# ==============================
+# TypeScript
+# ==============================
+*.tsbuildinfo
+
+# ==============================
+# Database
+# ==============================
+*.db
+*.sqlite
+*.sqlite3
+postgres_data/
+
+# ==============================
+# Uploads
+# ==============================
+uploads/
+
+# ==============================
+# Backups
+# ==============================
+backups/
+
+# ==============================
+# OS
+# ==============================
+.DS_Store
+Thumbs.db
+
+# ==============================
+# Local GenG Edge runtime files
+# ==============================
+backend/.deps-installed
+
+# ==============================
+# Logs
+# ==============================
+*.log
+npm-debug.log*.vite/
+
+.vite/

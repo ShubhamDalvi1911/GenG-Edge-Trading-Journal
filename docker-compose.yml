@@ -1,0 +1,46 @@
+version: "3.9"
+services:
+  mailhog:
+    image: mailhog/mailhog:v1.0.1
+    ports:
+      - "1025:1025"
+      - "8025:8025"
+
+  backend:
+    build:
+      context: ./backend
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000
+    environment:
+      DATABASE_URL: sqlite:///./trading_journal.db
+      SECRET_KEY: change-me-to-a-long-random-secret-key
+      ACCESS_TOKEN_EXPIRE_MINUTES: 1440
+      ENVIRONMENT: development
+      BACKEND_URL: http://localhost:8000
+      CORS_ORIGINS: http://localhost:5173,http://127.0.0.1:5173
+      UPLOAD_DIR: /app/uploads
+      SMTP_HOST: mailhog
+      SMTP_PORT: 1025
+      SMTP_FROM_EMAIL: no-reply@gengedge.local
+      SMTP_USE_TLS: "false"
+      FRONTEND_URL: http://localhost:5173
+    ports:
+      - "8000:8000"
+    depends_on:
+      - mailhog
+    volumes:
+      - ./backend:/app
+      - ./uploads:/app/uploads
+
+  frontend:
+    build:
+      context: ./frontend
+    command: npm run dev -- --host 0.0.0.0
+    environment:
+      VITE_API_URL: http://localhost:8000
+    ports:
+      - "5173:5173"
+    depends_on:
+      - backend
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules

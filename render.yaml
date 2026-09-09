@@ -1,0 +1,23 @@
+services:
+  - type: web
+    name: geng-edge-api
+    runtime: python
+    rootDir: backend
+    buildCommand: pip install -r requirements.txt
+    startCommand: alembic upgrade head; uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /health
+    envVars:
+      - key: DATABASE_URL
+        sync: false
+      - key: SECRET_KEY
+        generateValue: true
+      - key: ENVIRONMENT
+        value: production
+      - key: FRONTEND_URL
+        value: https://gengedge.com
+      - key: BACKEND_URL
+        value: https://api.gengedge.com
+      - key: CORS_ORIGINS
+        value: https://gengedge.com,https://www.gengedge.com
+      - key: ACCESS_TOKEN_EXPIRE_MINUTES
+        value: "1440"
