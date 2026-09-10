@@ -1,598 +1,314 @@
-# GenG Edge
+# ⚡ GenG Edge
 
-GenG Edge is a private forex trading journal and risk-management workspace for recording executions, reviewing performance, monitoring funded-account rules, and preparing trades with independent utility tools.
+<div align="center">
 
-The product is built around one simple operating loop:
+### Forex Trading Journal • Performance Analytics • Risk Management
 
-1. Record the decision and execution while the details are available.
-2. Reconstruct performance from stored net P&L and account rules.
-3. Review patterns across symbols, sessions, strategies, and trading days.
-4. Use conservative risk calculations before committing to a position.
+[![Frontend Deployment](https://img.shields.io/badge/Netlify-Deployed-00C7B7?style=flat-square&logo=netlify&logoColor=white)](https://gengedgetradingjournal.netlify.app)
+[![Backend Status](https://img.shields.io/badge/Render-Online-46E3B7?style=flat-square&logo=render&logoColor=white)](https://geng-edge-backend.onrender.com/health)
+[![Python Version](https://img.shields.io/badge/Python-3.13-3776AB?style=flat-square&logo=python&logoColor=white)](https://www.python.org/)
+[![React Version](https://img.shields.io/badge/React-18-61DAFB?style=flat-square&logo=react&logoColor=black)](https://react.dev/)
 
-GenG Edge is not a broker, signal service, investment adviser, or promise of profitability. It is software for journaling, analysis, and planning.
+[Live Application](https://gengedgetradingjournal.netlify.app) • [API Documentation](https://geng-edge-backend.onrender.com/docs)
 
-The application keeps journal data in local SQLite by default and supports PostgreSQL for production. It includes a FastAPI backend, a React/Vite frontend, JWT authentication, analytics, email risk alerts, theme switching, public SEO pages, and a Tools workspace.
+</div>
 
-## Features
+---
 
-- User registration and login with JWT authentication.
-- Trading account creation and funded-account rule configuration.
-- Trade creation, editing, deletion, filtering, and search.
-- Instrument-aware P&L and trade metrics.
-- Dashboard analytics for equity, sessions, symbols, strategies, and trade quality.
-- Monthly calendar and AI-style journal review generated from stored trades.
-- Funded-account monitoring for profit targets, daily loss, drawdown, and consistency.
-- Email notifications for critical and breached risk states.
-- Settings for notification email preferences and SMTP test delivery.
-- Persistent dark and light themes.
-- Tools workspace with:
-  - Position Size calculator using monetary risk, pip value, account currency conversion, broker lot settings, conservative lot rounding, validation, and estimated margin.
-  - Forex Market Hours using IANA timezones, daylight-saving-aware conversion, session countdowns, overlaps, weekend handling, and a timezone-aware timeline.
-- Local database backup script for Windows.
-- Optional Docker Compose setup with MailHog for local email inspection.
+**GenG Edge** is a modern forex trading journal and risk-management workspace designed to help traders **record executions, analyze performance, monitor funded-account rules, and prepare positions using disciplined risk calculations**.
 
-## Technology
+The application brings journaling, analytics, account monitoring, automated email alerts, and independent trading utilities into one cohesive platform.
 
-- Frontend: React 18, TypeScript, Vite, Tailwind CSS, Recharts, Lucide.
-- Backend: FastAPI, SQLAlchemy, Pydantic Settings, JWT, SQLite locally, PostgreSQL in production, Alembic.
-- Testing: pytest, pytest-asyncio, Vitest dependencies for frontend tests.
-- Local email: SMTP-compatible delivery; MailHog is available in Docker Compose.
+> **Record → Analyze → Review → Manage Risk**
 
-## Requirements
+> [!NOTE]
+> *GenG Edge is software for journaling, analysis, and trade planning. It is **not a broker, trading signal service, investment adviser, or guarantee of profitability.***
 
-For the supported local setup, install:
+---
 
-- Python 3.13.
-- Node.js LTS and npm.
-- Git, if cloning from GitHub.
-- Docker Desktop only if you want MailHog or the Docker workflow.
+## ✨ Highlights
 
-Python 3.13 is recommended because the pinned backend dependency versions are tested against it. Newer Python versions may require native builds for packages such as `pydantic-core`.
+- 🔐 **Authentication:** Secure JWT-based auth, email verification, and password resets.
+- 📊 **Performance Analytics:** Comprehensive equity, P&L, strategy, and session metrics.
+- 📝 **Trading Journal:** Granular trade tagging (setups, sessions, timeframes, market conditions).
+- 🎯 **Funded Account Guard:** Automated daily loss, drawdown, and rule breach tracking.
+- 📧 **Automated Alerts:** Email notifications for risk breaches and periodic account summaries.
+- 🧮 **Trading Utilities:** Integrated position-size calculator & market hours tracker.
+- 🤖 **AI Journal Reports:** Automated analytical breakdowns of recurring trading patterns.
+- 🌓 **Modern UI:** Responsive dark and light theme options.
+- 🐳 **Developer-Friendly:** Local SQLite support, MailHog integration, Docker Compose setup, and Alembic migrations.
 
-## Quick Start on Windows
+---
 
-From the repository root, double-click `START_GENG_EDGE.bat`.
+## 🖥️ Application Overview
 
-The launcher creates `backend\\.venv` with Python 3.13, installs backend dependencies, starts FastAPI on `http://127.0.0.1:8000`, starts Vite on `http://127.0.0.1:5173`, and opens the frontend.
+GenG Edge is structured into two core operational environments:
 
-If Python 3.13 is not installed, install it first and run the launcher again.
+### 🔒 Private Trading Workspace
+Accessible strictly to authenticated users:
+* **Dashboard & Analytics:** Equity curves, win rates, and daily performance calendars.
+* **Trade Management:** Full trade logging, editing, filtering, and setup breakdowns.
+* **Risk Engine:** Real-time evaluation of funded account parameters.
+* **AI Analysis:** Smart synthesis of recent execution history.
 
-## Manual Setup
+### 🌐 Public Experience
+SEO-ready public tools and marketing pages:
+* **Public Tools:** Position Size Calculator & Timezone-aware Forex Market Hours.
+* **Information:** Features, Pricing, About, FAQ, Terms, Privacy, and Disclaimer.
 
-### Backend
+---
 
-```powershell
-cd backend
-py -3.13 -m venv .venv
-.\.venv\Scripts\python.exe -m pip install -r requirements.txt
-Copy-Item .env.example .env
-.\.venv\Scripts\python.exe -m uvicorn app.main:app --host 127.0.0.1 --port 8000
-```
-
-The backend reads `.env` from `backend/`. SQLite is used by default and creates `backend/trading_journal.db` when the application starts.
-
-For a new or production database, apply migrations before starting the API:
-
-```powershell
-cd backend
-.\.venv\Scripts\python.exe -m alembic upgrade head
-```
-
-### Frontend
-
-Open a second terminal:
-
-```powershell
-cd frontend
-npm install
-npm run dev -- --host 127.0.0.1
-```
-
-Open `http://127.0.0.1:5173`.
-
-## Environment Variables
-
-Copy `backend/.env.example` to `backend/.env` and configure as needed:
-
-| Variable | Purpose |
-| --- | --- |
-| `DATABASE_URL` | SQLAlchemy database URL; defaults to local SQLite. |
-| `SECRET_KEY` | Secret used to sign access tokens. Replace the example value. |
-| `ACCESS_TOKEN_EXPIRE_MINUTES` | JWT lifetime. |
-| `UPLOAD_DIR` | Local upload directory. |
-| `SMTP_HOST` | SMTP server hostname. |
-| `SMTP_PORT` | SMTP server port. |
-| `SMTP_USERNAME` | Optional SMTP username. |
-| `SMTP_PASSWORD` | Optional SMTP password. |
-| `SMTP_FROM_EMAIL` | Sender address. |
-| `SMTP_USE_TLS` | Whether SMTP STARTTLS is enabled. |
-| `FRONTEND_URL` | Frontend URL used in branded email links/assets. |
-
-The MT5 and AI variables in `.env.example` are reserved integration settings and are optional for the current local workflow.
-
-## Email Notifications
-
-Risk alerts are sent when an evaluated account reaches `CRITICAL` or `BREACHED` status, provided the user has enabled email alerts and configured a notification address in Settings. Alerts are evaluated after trade creation, trade updates, and account-rule updates.
-
-### MailHog with Docker
-
-Start the local SMTP capture service:
-
-```powershell
-docker compose up -d mailhog
-```
-
-MailHog SMTP listens on `localhost:1025` and its inbox is available at `http://localhost:8025`.
-
-Use the Settings **Send test** button to verify delivery. For real email, replace the SMTP values in `backend/.env` with credentials from your email provider.
-
-## Tools
-
-Tools are independent of journal trade entry and never create or modify trades.
-
-### Position Size
-
-The calculator supports:
-
-- Percentage or fixed risk.
-- Account currencies including USD, EUR, GBP, JPY, AUD, CAD, CHF, NZD, and INR.
-- Common forex symbols, custom symbols, JPY pairs, and configurable XAUUSD specifications.
-- Stop-loss and take-profit price or pip modes.
-- Quote-currency pip value calculation.
-- Base/quote/account currency conversion.
-- Manual conversion rates when a live rate is unavailable.
-- Broker contract size, pip size, minimum lot, lot step, maximum lot, and leverage.
-- Raw lot size, conservative rounded lot size, intended risk, actual risk, potential profit, potential loss, risk-to-reward, and estimated margin.
-
-Actual broker specifications, conversion rates, margin rules, spreads, commissions, swaps, and execution conditions can differ. Verify calculations with your broker before placing a trade.
-
-### Forex Market Hours
-
-The market-hours tool uses browser `Intl.DateTimeFormat` and IANA timezone identifiers such as `Europe/London`, `America/New_York`, `Australia/Sydney`, `Asia/Tokyo`, and `Asia/Kolkata`. It updates once per second and supports:
-
-- Automatic browser timezone detection.
-- Manual timezone selection.
-- DST-aware session conversion.
-- Sydney overnight sessions.
-- Open, closed, opening-soon, and closing-soon states.
-- Dynamic overlaps and countdowns.
-- Weekend status.
-- A timeline that moves with the selected timezone.
-
-Session times are standard reference schedules, not broker guarantees.
-
-## API Overview
-
-The backend API is mounted under `/api`.
-
-- `POST /api/auth/register`
-- `POST /api/auth/login`
-- `GET /api/auth/me`
-- `GET /api/users/me`
-- `GET /api/users/me/notifications`
-- `PUT /api/users/me/notifications`
-- `POST /api/notifications/test`
-- `POST /api/notifications/summary/{period}`
-- `GET /api/accounts`
-- `POST /api/accounts`
-- `PUT /api/accounts/{account_id}`
-- `GET /api/trades`
-- `POST /api/trades`
-- `GET /api/trades/{trade_id}`
-- `PUT /api/trades/{trade_id}`
-- `DELETE /api/trades/{trade_id}`
-- Analytics endpoints under `/api/analytics`
-
-FastAPI interactive documentation is available at `http://127.0.0.1:8000/docs` while the backend is running.
-
-## Tests and Validation
-
-Backend tests:
-
-```powershell
-cd backend
-.\.venv\Scripts\python.exe -m pytest -q
-```
-
-Frontend typecheck and production build:
-
-```powershell
-cd frontend
-npm run build
-```
-
-The build runs TypeScript project compilation followed by Vite production bundling.
-
-## Production deployment
-
-1. Create a managed PostgreSQL database and set its connection string as `DATABASE_URL` in Render. Never put this value in frontend variables.
-2. Deploy the backend service from `render.yaml`. Render should use `alembic upgrade head; uvicorn app.main:app --host 0.0.0.0 --port $PORT` as its start command.
-3. Deploy `frontend/` as a Vercel project. Set `VITE_API_URL=https://api.gengedge.com` and use `npm run build`.
-4. Add `gengedge.com` and `www.gengedge.com` to Vercel. Add `api.gengedge.com` to Render. Use the DNS records shown by those providers because the exact target values vary by account and region.
-5. Set Render `FRONTEND_URL=https://gengedge.com`, `BACKEND_URL=https://api.gengedge.com`, `CORS_ORIGINS=https://gengedge.com,https://www.gengedge.com`, `ENVIRONMENT=production`, and a random `SECRET_KEY` of at least 32 characters. Configure SMTP variables only in Render.
-6. Verify HTTPS, `/health`, `/robots.txt`, `/sitemap.xml`, authentication, trade ownership, and both public tools before submitting the site to Google Search Console.
-
-Private routes are excluded from the sitemap and disallowed in `frontend/public/robots.txt`. The frontend Vercel rewrite preserves client-side routes while serving those crawler files directly.
-
-## Backups
-
-Create a timestamped copy of the local SQLite database:
-
-```powershell
-.\BACKUP_DATABASE.bat
-```
-
-Backups are written to `backups/`, which is ignored by Git.
-
-## Docker
-
-The optional Compose file starts MailHog, the backend, and the frontend:
-
-```powershell
-docker compose up --build
-```
-
-Services:
-
-- Frontend: `http://localhost:5173`
-- Backend: `http://localhost:8000`
-- FastAPI docs: `http://localhost:8000/docs`
-- MailHog: `http://localhost:8025`
-
-## Repository Hygiene
-
-Do not commit these local files or directories:
-
-- `backend/.env`
-- `backend/.venv/`
-- `backend/trading_journal.db`
-- `frontend/node_modules/`
-- `frontend/dist/`
-- `backups/`
-- `uploads/`
-
-The repository `.gitignore` already excludes these runtime artifacts.
-
-## Product Principles
-
-### Evidence over narrative
-
-Analytics are calculated from the trades stored in the journal. The review surfaces are intended to make recorded behavior easier to inspect, not to create certainty from incomplete data.
-
-### Risk before size
-
-The position calculator starts with intended risk and stop distance, then derives a lot size using pip value, contract size, conversion, and broker constraints. The result is rounded down to the configured lot step so the suggested size does not silently exceed the intended risk.
-
-### Private by default
-
-Journal and account routes require authentication. Backend queries scope records to the authenticated user and verify ownership before reading, updating, or deleting a trade. Public pages contain product information and independent tools only; they do not render user records.
-
-### Local development without production shortcuts
-
-SQLite keeps local setup lightweight. PostgreSQL, explicit CORS origins, environment-provided secrets, Alembic migrations, and a non-reload production process are the intended deployment path.
-
-## Application Areas
-
-### Private workspace
-
-The authenticated dashboard includes:
-
-- Dashboard: current account context, performance cards, risk status, calendar, and equity view.
-- Trades: searchable and filterable trade history with create, edit, and delete actions.
-- Analytics: direction, session, symbol, strategy, win-rate, P&L, and journal statistics.
-- Calendar: daily and weekly performance grouped by trading date.
-- AI Report: evidence-based observations and review prompts derived from stored records.
-- Strategies: aggregate outcomes by the strategy recorded on each trade.
-- Risk: funded-account limits, drawdown, daily loss, targets, and trading-day progress.
-- Tools: independent position sizing and market-hours utilities.
-- Settings: account rules, account profile, notification preferences, and SMTP test delivery.
-
-### Public experience
-
-The frontend serves indexable public pages without exposing journal data:
-
-- `/`: product overview and calls to action.
-- `/features`: journal, analytics, risk monitoring, and tool capabilities.
-- `/about`: product purpose, technical foundation, and responsible-use position.
-- `/tools/position-size-calculator`: public position-size utility.
-- `/tools/forex-market-hours`: public DST-aware market-hours utility.
-- `/pricing`, `/faq`, `/contact`, `/terms`, `/privacy`, and `/disclaimer`.
-
-Private application routes and authentication pages are excluded from the sitemap and disallowed in `robots.txt` where appropriate.
-
-## Security Model
-
-- Passwords are hashed with bcrypt and are never stored in plaintext.
-- Access tokens are signed with `SECRET_KEY` and have a configurable expiration.
-- Production refuses a missing or short secret key.
-- CORS is configured from `CORS_ORIGINS`; wildcard origins are not used.
-- Trades and accounts are filtered by `user_id` on the backend.
-- Database credentials, SMTP credentials, and signing secrets stay server-side.
-- Production schema changes run through Alembic rather than application import side effects.
-- Invalid authentication tokens return a safe unauthorized response rather than internal details.
-- Public SEO files contain only public URLs and no account or trade data.
-
-Security is an ongoing engineering responsibility. Before launch, configure HTTPS, rotate all deployment secrets, restrict database access, configure backups, and review provider logs and access controls.
-
-## API Contract Summary
-
-All application endpoints are mounted under `/api`.
-
-| Area | Endpoints |
-| --- | --- |
-| Authentication | `POST /auth/register`, `POST /auth/login`, `GET /auth/me` |
-| Users | `GET /users/me`, notification read/update endpoints |
-| Accounts | `GET /accounts`, `POST /accounts`, `PUT /accounts/{account_id}` |
-| Trades | `GET`, `POST`, `PUT`, and `DELETE /trades` resources |
-| Analytics | Overview, last-30-days, calendar, AI report, funded-account evaluation |
-| Notifications | Test email and daily/weekly summary delivery |
-| Operations | `GET /health` |
-
-The OpenAPI document is available at `/docs` during local development. Do not expose interactive API documentation publicly unless that is an intentional operational decision.
-
-## Database and Migration Policy
-
-Models live under `backend/app/models`. The database engine is selected through `DATABASE_URL`.
-
-- Local development: SQLite at `sqlite:///./trading_journal.db`.
-- Production: PostgreSQL connection string supplied by the hosting provider.
-- New environments: run `python -m alembic upgrade head` before starting the backend.
-- Schema changes: create a new migration, test it against SQLite where practical, and validate it against PostgreSQL before deployment.
-- Backups: use provider-managed PostgreSQL backups in production and `BACKUP_DATABASE.bat` for local SQLite snapshots.
-
-Never place a production PostgreSQL URL in frontend variables, committed files, screenshots, or public documentation.
-
-## Observability and Operations
-
-Before a production release, confirm:
-
-- `/health` returns a healthy response.
-- Render logs show a successful migration and Uvicorn startup.
-- PostgreSQL connections use pre-ping and provider connection limits are respected.
-- SMTP failures are logged server-side without exposing credentials to users.
-- Frontend network errors show a recoverable error state rather than silently presenting stale private data.
-- Backups and restoration procedures have been tested, not merely configured.
-
-## Release Checklist
-
-- [ ] Run backend migrations against the target database.
-- [ ] Run the complete backend test suite.
-- [ ] Run the frontend production build.
-- [ ] Set production `DATABASE_URL`, `SECRET_KEY`, `ENVIRONMENT`, `FRONTEND_URL`, `BACKEND_URL`, and `CORS_ORIGINS`.
-- [ ] Confirm no secrets or local databases are tracked by Git.
-- [ ] Verify registration, login, logout, and expired-token behavior.
-- [ ] Verify a user cannot read, update, or delete another user's trade.
-- [ ] Verify position sizing with a standard pair, a JPY pair, and XAUUSD.
-- [ ] Verify market-hours DST behavior and weekend handling.
-- [ ] Verify `/robots.txt`, `/sitemap.xml`, canonical metadata, and public page titles.
-- [ ] Verify HTTPS, custom domains, DNS, and API connectivity from the deployed frontend.
-- [ ] Submit the public domain and sitemap to Google Search Console.
-
-## Responsible Use
-
-Forex and leveraged trading can result in rapid and substantial losses. GenG Edge calculations depend on the values entered by the user and may not include every broker-specific condition, spread, commission, swap, execution rule, or account restriction. Verify outputs with the relevant broker and account provider. Nothing in this repository is financial, investment, tax, or legal advice.
-
-## Complete Environment Reference
-
-The backend loads variables from `backend/.env` during local development. In production, define them in the hosting provider dashboard instead of committing a file.
-
-| Variable | Required | Local example | Production guidance |
-| --- | --- | --- | --- |
-| `DATABASE_URL` | Yes | `sqlite:///./trading_journal.db` | Use the managed PostgreSQL connection string. |
-| `SECRET_KEY` | Yes | A local development secret | Use a generated secret with at least 32 characters. |
-| `ENVIRONMENT` | Yes | `development` | Set to `production`. |
-| `ACCESS_TOKEN_EXPIRE_MINUTES` | No | `1440` | Choose a session lifetime appropriate for your threat model. |
-| `FRONTEND_URL` | Yes | `http://localhost:5173` | `https://gengedge.com` |
-| `BACKEND_URL` | Yes | `http://127.0.0.1:8000` | `https://api.gengedge.com` |
-| `CORS_ORIGINS` | Yes | `http://localhost:5173,http://127.0.0.1:5173` | `https://gengedge.com,https://www.gengedge.com` |
-| `UPLOAD_DIR` | No | `./uploads` | Use persistent storage if uploads are enabled. |
-| `SMTP_HOST` | No | `localhost` | Use the provider SMTP hostname. |
-| `SMTP_PORT` | No | `1025` | Use the provider SMTP port. |
-| `SMTP_USERNAME` | No | Empty for MailHog | Store credentials only in the backend environment. |
-| `SMTP_PASSWORD` | No | Empty for MailHog | Store credentials only in the backend environment. |
-| `SMTP_FROM_EMAIL` | No | `no-reply@gengedge.local` | Use a verified sender address. |
-| `SMTP_USE_TLS` | No | `false` | Usually `true` for hosted SMTP. |
-
-Never expose `DATABASE_URL`, `SECRET_KEY`, `SMTP_PASSWORD`, or provider API keys through `VITE_*` variables. Vite variables are bundled into browser JavaScript.
-
-## Authentication Lifecycle
-
-### Registration
-
-`POST /api/auth/register` creates a bcrypt-hashed password, creates an authenticated JWT response, and creates a 24-hour email-verification token. When SMTP is configured, the verification link is sent to the registered address.
-
-### Login
-
-`POST /api/auth/login` validates the email and password and returns a bearer token. The current frontend stores that token in local storage for the existing local-first workflow. A future hardening step may move the session to secure, HttpOnly cookies if the deployment model requires it.
-
-### Password reset
-
-1. Submit an email to `POST /api/auth/forgot-password`.
-2. The response is intentionally generic so account existence is not disclosed.
-3. A short-lived, hashed, one-time token is created for an active matching account.
-4. SMTP sends a link to `/reset-password?token=...`.
-5. `POST /api/auth/reset-password` replaces the password and marks the token used.
-
-For local development without SMTP or Docker, the development environment returns the one-time reset link directly in the Forgot Password screen. This fallback is disabled whenever `ENVIRONMENT=production`.
-
-### Email verification
-
-Verification links use `/verify-email?token=...`. The token is stored only as a SHA-256 hash, expires after 24 hours, and cannot be reused.
-
-### Account management
-
-- `POST /api/users/me/change-password` requires the current password.
-- `DELETE /api/users/me` permanently removes the user, trades, accounts, notifications, and lifecycle tokens.
-- A deleted user's old bearer token cannot load `/api/auth/me` because the user record no longer exists.
-
-## Project Structure
+## 🏗️ System Architecture
 
 ```text
-.
-├── backend/
-│   ├── app/
-│   │   ├── core/              Settings and security helpers
-│   │   ├── database/          SQLAlchemy engine and sessions
-│   │   ├── models/            User, account, trade, token, notification models
-│   │   ├── routes/            FastAPI route modules
-│   │   ├── schemas/           Pydantic request and response contracts
-│   │   └── services/          Metrics, analytics, email, and account rules
-│   ├── migrations/            Alembic environment and revisions
-│   ├── tests/                 Backend regression tests
-│   ├── alembic.ini
-│   ├── Dockerfile
-│   └── requirements.txt
-├── frontend/
-│   ├── public/                Robots, sitemap, and static assets
-│   ├── src/
-│   │   ├── components/        Auth, public site, and tools components
-│   │   ├── services/          API client and typed contracts
-│   │   ├── App.tsx            Private workspace and route entry
-│   │   └── styles.css
-│   ├── package.json
-│   ├── vercel.json
-│   └── vite.config.ts
-├── backups/
-├── docker-compose.yml
-├── render.yaml
-├── START_GENG_EDGE.bat
-└── README.md
+                           PRODUCTION DEPLOYMENT
+                                 Internet
+                                    │
+                     ┌──────────────┴──────────────┐
+                     ▼                             ▼
+              Netlify Frontend               Render Backend
+                React + Vite                    FastAPI
+                     │                             │
+                     └────────── HTTPS API ────────┘
+                                                   │
+                                                   ▼
+                                          PostgreSQL Database
 ```
 
-## Daily Development Commands
+```text
+                         LOCAL DEVELOPMENT WORKFLOW
+       
+       React / Vite ────────► FastAPI ────────► SQLite
+                                │
+                                ▼ (Optional Email Capture)
+                            MailHog
+```
 
-Start the complete local application:
+---
 
-```powershell
+## 🧰 Technology Stack
+
+| Domain | Technologies |
+| :--- | :--- |
+| **Frontend** | React 18, TypeScript, Vite, Tailwind CSS, Recharts, Lucide Icons |
+| **Backend** | Python 3.13, FastAPI, SQLAlchemy, Pydantic v2, Alembic, JWT, bcrypt |
+| **Databases** | SQLite (Development), PostgreSQL (Production) |
+| **Tooling & Infra**| Docker, MailHog, Netlify, Render, GitHub Actions |
+
+---
+
+## ⚡ Quick Start (Windows)
+
+The repository includes an automated launcher script for fast setup:
+
+```cmd
 .\START_GENG_EDGE.bat
 ```
 
-Run the backend manually:
+This launch script automatically:
+1. Provisions a Python `.venv` environment and installs `requirements.txt`.
+2. Runs database migrations via Alembic.
+3. Launches the FastAPI backend on `http://127.0.0.1:8000`.
+4. Initializes the React Vite frontend on `http://127.0.0.1:5173`.
 
-```powershell
-cd backend
-.\.venv\Scripts\python.exe -m alembic upgrade head
-.\.venv\Scripts\python.exe -m uvicorn app.main:app --host 127.0.0.1 --port 8000
+---
+
+## 🔧 Manual Installation
+
+### Prerequisites
+* Python **3.13+**
+* Node.js **LTS** & npm
+* Git
+
+### 1. Clone Repository
+```bash
+git clone [https://github.com/ShubhamDalvi1911/GenG-Edge-Trading-Journal.git](https://github.com/ShubhamDalvi1911/GenG-Edge-Trading-Journal.git)
+cd GenG-Edge-Trading-Journal
 ```
 
-Run the frontend manually:
+### 2. Backend Setup
+```bash
+cd backend
+python -m venv .venv
 
-```powershell
+# On Windows
+.\.venv\Scripts\activate
+# On macOS/Linux
+source .venv/bin/activate
+
+pip install -r requirements.txt
+cp .env.example .env
+
+# Run migrations & start server
+alembic upgrade head
+uvicorn app.main:app --host 127.0.0.1 --port 8000
+```
+
+### 3. Frontend Setup
+```bash
+# Open a second terminal
 cd frontend
 npm install
 npm run dev -- --host 127.0.0.1
 ```
 
-Run quality checks:
+Access the app locally at **`http://127.0.0.1:5173`**.
 
-```powershell
+---
+
+## 🔐 Environment Configuration
+
+Create a `.env` file in the `/backend` directory based on `.env.example`:
+
+```ini
+# Core Configuration
+DATABASE_URL=sqlite:///./trading_journal.db
+SECRET_KEY=your-development-secret-key-change-in-production
+ACCESS_TOKEN_EXPIRE_MINUTES=1440
+ENVIRONMENT=development
+
+# URLs & CORS
+FRONTEND_URL=http://localhost:5173
+BACKEND_URL=[http://127.0.0.1:8000](http://127.0.0.1:8000)
+CORS_ORIGINS=http://localhost:5173,[http://127.0.0.1:5173](http://127.0.0.1:5173)
+
+# Local SMTP / MailHog
+SMTP_HOST=localhost
+SMTP_PORT=1025
+SMTP_USERNAME=
+SMTP_PASSWORD=
+SMTP_FROM_EMAIL=no-reply@gengedge.local
+SMTP_USE_TLS=false
+```
+
+---
+
+## 🛡️ Risk Management & Calculations
+
+```text
+  ┌────────────────┐     ┌────────────────┐     ┌────────────────┐
+  │  SAFE (<70%)   │ ──► │ WARNING (>70%) │ ──► │ CRITICAL (>90%)│
+  └────────────────┘     └────────────────┘     └────────────────┘
+                                                        │
+                                                        ▼
+                                                 BREACHED (100%)
+```
+
+GenG Edge tracks real-time account rules for funded accounts:
+* **Profit Targets** & **Max Drawdown**
+* **Daily Loss Thresholds**
+* **Remaining Risk Capacity**
+
+When risk parameters cross configured safety margins (`CRITICAL` or `BREACHED`), the system dispatches automated warning emails via configured SMTP settings.
+
+---
+
+## 🔑 Authentication Lifecycle
+
+```text
+[ User Action ]            [ Processing ]               [ Output ]
+
+Forgot Password ──► POST /api/auth/forgot-password ──► Generate & Hash Token
+                                                             │
+                                                             ▼
+/reset-password ◄── POST /api/auth/reset-password  ◄── Send Email Link
+       │
+       ▼
+Update Password ──► Invalidate Used Token
+```
+
+* **Token Expiration:** Short-lived, single-use reset & verification tokens.
+* **Privacy Standard:** Password reset endpoints return uniform generic responses to prevent account enumeration attacks.
+
+---
+
+## 📚 API Endpoint Reference
+
+Detailed documentation is accessible via Swagger UI at `/docs` when running locally.
+
+| Group | Method | Endpoint | Description |
+| :--- | :--- | :--- | :--- |
+| **Auth** | `POST` | `/api/auth/register` | Register a new user |
+| **Auth** | `POST` | `/api/auth/login` | Authenticate & acquire JWT token |
+| **Auth** | `GET` | `/api/auth/me` | Fetch authenticated user profile |
+| **Trades** | `GET` | `/api/trades` | Fetch user trades (supports filtering) |
+| **Trades** | `POST` | `/api/trades` | Log a new execution |
+| **Trades** | `PUT` | `/api/trades/{id}` | Update existing trade entry |
+| **Analytics**| `GET` | `/api/analytics` | Retrieve dashboard performance metrics |
+| **System** | `GET` | `/health` | Application health check endpoint |
+
+---
+
+## 📁 Repository Structure
+
+```text
+GenG-Edge-Trading-Journal/
+├── backend/
+│   ├── app/
+│   │   ├── core/          # Security & app setup
+│   │   ├── database/      # Database session engines
+│   │   ├── models/        # SQLAlchemy ORM models
+│   │   ├── routes/        # FastAPI endpoints
+│   │   ├── schemas/       # Pydantic data contracts
+│   │   └── services/      # Core business logic
+│   ├── migrations/        # Alembic database versions
+│   └── tests/             # Pytest test suite
+├── frontend/
+│   ├── src/
+│   │   ├── components/    # Reusable UI components
+│   │   ├── services/      # Axios API Client
+│   │   └── App.tsx        # Main application layout
+│   └── vite.config.ts
+├── docker-compose.yml     # Local orchestration (MailHog + App)
+├── START_GENG_EDGE.bat    # Windows launcher script
+└── README.md
+```
+
+---
+
+## 🧪 Testing & Verification
+
+### Backend Tests
+```bash
 cd backend
-.\.venv\Scripts\python.exe -m pytest -q
+pytest -q
+```
 
-cd ..\frontend
+### Frontend Build Verification
+```bash
+cd frontend
 npm run build
 ```
 
-## Local Email Troubleshooting
+---
 
-The default local SMTP configuration expects MailHog at `localhost:1025`.
+## 📌 Project Status
 
-With Docker Desktop installed:
+| Module | Status |
+| :--- | :---: |
+| Authentication & JWT | ✅ Completed |
+| Trade Journal & Tags | ✅ Completed |
+| Risk Engine & Alerts | ✅ Completed |
+| Position Calculator | ✅ Completed |
+| Forex Session Tracker | ✅ Completed |
+| Dark / Light Theme | ✅ Completed |
+| Production Deploy Setup | ✅ Completed |
 
-```powershell
-docker compose up -d mailhog
-```
+---
 
-Open the inbox at `http://localhost:8025`.
+## ⚠️ Disclaimer
 
-Without Docker, use the development reset-link fallback shown in the Forgot Password screen. A real inbox requires a real SMTP provider and valid `SMTP_HOST`, `SMTP_PORT`, `SMTP_USERNAME`, `SMTP_PASSWORD`, `SMTP_FROM_EMAIL`, and `SMTP_USE_TLS` values.
+Trading foreign exchange on margin carries a high level of risk and may not be suitable for all investors. **GenG Edge** provides software-based calculations and analytical tools based on user inputs. Always verify parameters, contract specifications, and margin rules directly with your broker before entering live market positions.
 
-If reset requests return a generic success message but no message arrives, check:
+---
 
-1. The SMTP host and port are reachable from the backend machine.
-2. The sender address is accepted by the SMTP provider.
-3. TLS mode matches the provider's requirements.
-4. The backend process was restarted after changing `.env`.
-5. Render logs for `Unable to send GenG Edge email`.
+## 👤 Author
 
-## Production Deployment Runbook
+**Shubham Dalvi**
+- GitHub: [@ShubhamDalvi1911](https://github.com/ShubhamDalvi1911)
 
-### 1. PostgreSQL
+---
 
-Create a managed PostgreSQL database. Copy its private connection string into Render as `DATABASE_URL`. Do not use the local SQLite path in production.
+## 📄 License
 
-### 2. Render backend
-
-Create a web service from the repository with:
-
-```text
-Root directory: backend
-Build command: pip install -r requirements.txt
-Start command: alembic upgrade head; uvicorn app.main:app --host 0.0.0.0 --port $PORT
-Health check: /health
-```
-
-Set the production environment variables listed above. Render supplies `$PORT`; the application must not replace it with a fixed production port.
-
-### 3. Vercel frontend
-
-Create a Vercel project with:
-
-```text
-Root directory: frontend
-Build command: npm run build
-Output directory: dist
-Environment variable: VITE_API_URL=https://api.gengedge.com
-```
-
-The included `vercel.json` rewrites client-side routes to `index.html` while leaving `/robots.txt`, `/sitemap.xml`, and static assets directly accessible.
-
-### 4. Domains and DNS
-
-Add `gengedge.com` to Vercel and `api.gengedge.com` to Render. Copy the exact DNS records shown by each provider into the DNS provider that controls the domain. Provider targets can differ by account and must not be guessed from this README.
-
-After DNS propagates, verify:
-
-```text
-https://gengedge.com
-https://api.gengedge.com/health
-https://gengedge.com/robots.txt
-https://gengedge.com/sitemap.xml
-```
-
-### 5. Search Console
-
-1. Create a Google Search Console domain or URL-prefix property for `https://gengedge.com`.
-2. Complete ownership verification.
-3. Submit `https://gengedge.com/sitemap.xml`.
-4. Inspect the homepage, Features page, About page, and public tool pages.
-5. Request indexing for important public pages when appropriate.
-
-Sitemap submission does not guarantee indexing or ranking.
-
-## Current Scope and Future Work
-
-Implemented in the current codebase:
-
-- Multi-user JWT authentication.
-- Backend ownership checks for account and trade data.
-- SQLite development and PostgreSQL production support.
-- Alembic migrations.
-- Password reset and email verification token flows.
-- Password change and permanent account deletion.
-- Public SEO pages, canonical metadata, robots, and sitemap.
-- Position sizing and market-hours utilities.
-- Local development reset-link fallback when SMTP is unavailable.
-
-Recommended next production hardening steps:
-
-- Add an external rate limiter for authentication and password-reset endpoints.
-- Move browser sessions to secure HttpOnly cookies if the deployment threat model requires it.
-- Add a managed transactional email provider and verified sender domain.
-- Add browser-level end-to-end tests for the public routes and reset flow.
-- Add structured JSON logging, error monitoring, and tested PostgreSQL restore procedures.
-- Review dependency updates and run a security scan before each production release.
-
-## License
-
-Add the license you want to use before publishing the repository. No license is implied by this README.
+This repository is currently unlicensed. All rights are reserved.
