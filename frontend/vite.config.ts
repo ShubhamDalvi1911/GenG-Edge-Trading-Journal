@@ -10,7 +10,8 @@ export default defineConfig({
       server.middlewares.use((request, response, next) => {
         const rootRequest = request as typeof request & { url?: string };
         const pathname = rootRequest.url?.split('?')[0] ?? '/';
-        if (pathname === '/' || (!pathname.includes('.') && !pathname.startsWith('/api/'))) {
+        const isViteInternalRequest = pathname.startsWith('/@vite/') || pathname.startsWith('/@react-refresh');
+        if (!isViteInternalRequest && (pathname === '/' || (!pathname.includes('.') && !pathname.startsWith('/api/')))) {
           rootRequest.url = '/index.html';
         }
         next();
@@ -20,6 +21,17 @@ export default defineConfig({
   server: {
     port: 5173,
     host: '0.0.0.0',
+  },
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          react: ['react', 'react-dom'],
+          charts: ['recharts'],
+          icons: ['lucide-react'],
+        },
+      },
+    },
   },
   test: {
     environment: 'jsdom',

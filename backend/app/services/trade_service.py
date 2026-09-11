@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 from datetime import datetime
+
+from app.core.datetime_utils import ensure_utc
 from typing import Any
 
 from sqlalchemy.orm import Session
@@ -91,6 +93,11 @@ def calculate_trade_metrics(trade: dict[str, Any]) -> dict[str, float | str | in
         "win_loss": win_loss,
         "tlc_score": int(trade.get("tlc_score") or 0),
     }
+
+
+def normalize_trade_datetimes(trade: Trade) -> None:
+    trade.entry_time = ensure_utc(trade.entry_time)
+    trade.exit_time = ensure_utc(trade.exit_time)
 
 
 def upsert_trade_metrics(trade: Trade, db: Session) -> None:

@@ -4,6 +4,10 @@ from pydantic import BaseModel, ConfigDict, EmailStr, Field
 class UserBase(BaseModel):
     email: EmailStr
     full_name: str | None = None
+    username: str | None = None
+    avatar_url: str | None = None
+    avatar_zoom: int = Field(default=100, ge=100, le=180)
+    avatar_position: str = "center"
 
 
 class UserCreate(UserBase):
@@ -27,6 +31,14 @@ class PasswordResetConfirm(BaseModel):
 class PasswordChange(BaseModel):
     current_password: str
     new_password: str = Field(min_length=8)
+
+
+class UserUpdate(BaseModel):
+    full_name: str | None = None
+    username: str | None = None
+    avatar_url: str | None = None
+    avatar_zoom: int | None = Field(default=None, ge=100, le=180)
+    avatar_position: str | None = None
 
 
 class UserRead(UserBase):

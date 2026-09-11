@@ -10,7 +10,8 @@ export default defineConfig({
                     var _a, _b;
                     var rootRequest = request;
                     var pathname = (_b = (_a = rootRequest.url) === null || _a === void 0 ? void 0 : _a.split('?')[0]) !== null && _b !== void 0 ? _b : '/';
-                    if (pathname === '/' || (!pathname.includes('.') && !pathname.startsWith('/api/'))) {
+                    var isViteInternalRequest = pathname.startsWith('/@vite/') || pathname.startsWith('/@react-refresh');
+                    if (!isViteInternalRequest && (pathname === '/' || (!pathname.includes('.') && !pathname.startsWith('/api/')))) {
                         rootRequest.url = '/index.html';
                     }
                     next();
@@ -20,6 +21,17 @@ export default defineConfig({
     server: {
         port: 5173,
         host: '0.0.0.0',
+    },
+    build: {
+        rollupOptions: {
+            output: {
+                manualChunks: {
+                    react: ['react', 'react-dom'],
+                    charts: ['recharts'],
+                    icons: ['lucide-react'],
+                },
+            },
+        },
     },
     test: {
         environment: 'jsdom',

@@ -1,10 +1,11 @@
 from datetime import datetime, timedelta, timezone
 
-from fastapi import APIRouter, Depends, HTTPException, status
-from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
+from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
 from sqlalchemy.orm import Session
 
 from app.core.config import get_settings
+from app.core.dependencies import ACCESS_COOKIE_NAME, get_current_user, oauth2_scheme
+from app.core.rate_limit import auth_limiter, client_key, password_reset_limiter
 from app.core.security import create_access_token, create_one_time_token, get_password_hash, hash_one_time_token, verify_password
 from app.database.database import get_db
 from app.models.account_token import AccountToken
@@ -14,11 +15,23 @@ from app.services.email_service import send_password_reset_email, send_verificat
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 settings = get_settings()
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/auth/login")
+
+
+def _set_session_cookie(response: Response, token: str) -> None:
+    response.set_cookie(
+        key=ACCESS_COOKIE_NAME,
+        value=token,
+        httponly=True,
+        secure=settings.environment.lower() in {"production", "prod"},
+        samesite="lax",
+        max_age=settings.access_token_expire_minutes * 60,
+        path="/",
+    )
 
 
 @router.post("/register", response_model=TokenResponse, status_code=status.HTTP_201_CREATED)
-def register_user(payload: UserCreate, db: Session = Depends(get_db)):
+def register_user(response: Response, request: Request, payload: UserCreate, db: Session = Depends(get_db)):
+    auth_limiter.check(client_key(request, "register"))
     existing = db.query(User).filter(User.email == payload.email.lower()).first()
     if existing:
         raise HTTPException(status_code=400, detail="User already exists")
@@ -40,21 +53,31 @@ def register_user(payload: UserCreate, db: Session = Depends(get_db)):
     send_verification_email(user.email, raw_token)
 
     token = create_access_token(user.id)
+    _set_session_cookie(response, token)
     return {"access_token": token, "token_type": "bearer", "user": UserRead.model_validate(user)}
 
 
 @router.post("/login", response_model=TokenResponse)
-def login_user(payload: UserLogin, db: Session = Depends(get_db)):
+def login_user(response: Response, request: Request, payload: UserLogin, db: Session = Depends(get_db)):
+    auth_limiter.check(client_key(request, "login"))
     user = db.query(User).filter(User.email == payload.email.lower()).first()
     if not user or not verify_password(payload.password, user.hashed_password):
         raise HTTPException(status_code=401, detail="Invalid credentials")
 
     token = create_access_token(user.id)
+    _set_session_cookie(response, token)
     return {"access_token": token, "token_type": "bearer", "user": UserRead.model_validate(user)}
 
 
+@router.post("/logout")
+def logout(response: Response):
+    response.delete_cookie(ACCESS_COOKIE_NAME, path="/")
+    return {"message": "Signed out successfully."}
+
+
 @router.post("/forgot-password")
-def forgot_password(payload: PasswordResetRequest, db: Session = Depends(get_db)):
+def forgot_password(request: Request, payload: PasswordResetRequest, db: Session = Depends(get_db)):
+    password_reset_limiter.check(client_key(request, "forgot-password"))
     user = db.query(User).filter(User.email == payload.email.lower()).first()
     development_reset_url = None
     if user and user.is_active:
@@ -71,7 +94,8 @@ def forgot_password(payload: PasswordResetRequest, db: Session = Depends(get_db)
 
 
 @router.post("/reset-password")
-def reset_password(payload: PasswordResetConfirm, db: Session = Depends(get_db)):
+def reset_password(request: Request, payload: PasswordResetConfirm, db: Session = Depends(get_db)):
+    password_reset_limiter.check(client_key(request, "reset-password"))
     token_record = db.query(AccountToken).filter(AccountToken.token_hash == hash_one_time_token(payload.token), AccountToken.purpose == "password_reset", AccountToken.used_at.is_(None)).first()
     if not token_record or token_record.expires_at.replace(tzinfo=timezone.utc) < datetime.now(timezone.utc):
         raise HTTPException(status_code=400, detail="Reset token is invalid or expired")
@@ -99,12 +123,5 @@ def verify_email(token: str, db: Session = Depends(get_db)):
 
 
 @router.get("/me", response_model=UserRead)
-def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)):
-    from app.core.security import decode_access_token
-
-    payload = decode_access_token(token)
-    user_id = int(payload.get("sub"))
-    user = db.query(User).filter(User.id == user_id).first()
-    if not user:
-        raise HTTPException(status_code=404, detail="User not found")
-    return user
+def get_me(current_user: User = Depends(get_current_user)):
+    return current_user

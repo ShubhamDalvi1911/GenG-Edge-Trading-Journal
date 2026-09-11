@@ -1,27 +1,21 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
-from app.core.security import decode_access_token
+from app.core.dependencies import get_current_user_id
 from app.database.database import get_db
 from app.models.notification import NotificationSettings
 from app.models.trade import Trade
 from app.models.user import User
-from app.routes.auth import oauth2_scheme
 from app.services.email_service import send_branded_email
 from app.services.journal_analytics_service import last_30_days
 
 router = APIRouter(prefix="/notifications", tags=["notifications"])
 
 
-def current_user_id(token: str) -> int:
-    return int(decode_access_token(token)["sub"])
-
-
 @router.post("/summary/{period}")
-def send_summary(period: str, token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)):
+def send_summary(period: str, user_id: int = Depends(get_current_user_id), db: Session = Depends(get_db)):
     if period not in {"daily", "weekly"}:
         raise HTTPException(status_code=400, detail="Summary period must be daily or weekly")
-    user_id = current_user_id(token)
     preferences = db.query(NotificationSettings).filter(NotificationSettings.user_id == user_id).first()
     if not preferences or not preferences.email_enabled or not preferences.notification_email:
         return {"sent": False, "reason": "Email alerts are disabled or no notification email is configured"}
@@ -36,8 +30,7 @@ def send_summary(period: str, token: str = Depends(oauth2_scheme), db: Session =
 
 
 @router.post("/test")
-def send_test_email(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)):
-    user_id = current_user_id(token)
+def send_test_email(user_id: int = Depends(get_current_user_id), db: Session = Depends(get_db)):
     preferences = db.query(NotificationSettings).filter(NotificationSettings.user_id == user_id).first()
     if not preferences or not preferences.email_enabled or not preferences.notification_email:
         return {"sent": False, "reason": "Email alerts are disabled or no notification email is configured"}

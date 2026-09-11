@@ -5,4 +5,4 @@ Disallow: /api/
 Disallow: /login
 Disallow: /signup
 Disallow: /forgot-password
-Sitemap: https://gengedge.com/sitemap.xml
+Sitemap: https://gengedgetradingjournal.netlify.app/sitemap.xml

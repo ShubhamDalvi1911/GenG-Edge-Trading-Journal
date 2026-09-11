@@ -258,5 +258,68 @@ def test_change_password_and_delete_account_remove_private_data():
     headers = {"Authorization": f"Bearer {token}"}
     assert client.post("/api/users/me/change-password", json={"current_password": "StrongPass123!", "new_password": "NewStrongPass123!"}, headers=headers).status_code == 200
     assert client.post("/api/auth/login", json={"email": email, "password": "NewStrongPass123!"}).status_code == 200
+
+
+def test_profile_update_and_account_delete_are_supported():
+    email = f"profile-{uuid4().hex}@example.com"
+    register_response = client.post("/api/auth/register", json={"email": email, "password": "StrongPass123!", "full_name": "Initial Name"})
+    assert register_response.status_code == 201, register_response.text
+    token = register_response.json()["access_token"]
+    headers = {"Authorization": f"Bearer {token}"}
+
+    profile_response = client.put(
+        "/api/users/me",
+        json={"full_name": "Updated Trader", "username": "updatedtrader"},
+        headers=headers,
+    )
+    assert profile_response.status_code == 200, profile_response.text
+    assert profile_response.json()["full_name"] == "Updated Trader"
+    assert profile_response.json()["username"] == "updatedtrader"
+
+    account_one = client.post("/api/accounts", json={"name": "Primary", "account_type": "Real", "currency": "USD", "initial_balance": 1000, "current_balance": 1000}, headers=headers)
+    account_two = client.post("/api/accounts", json={"name": "Secondary", "account_type": "Demo", "currency": "USD", "initial_balance": 2000, "current_balance": 2000}, headers=headers)
+    assert account_one.status_code == 201, account_one.text
+    assert account_two.status_code == 201, account_two.text
+
+    delete_response = client.delete(f"/api/accounts/{account_one.json()['id']}", headers=headers)
+    assert delete_response.status_code == 204, delete_response.text
+    assert client.get("/api/accounts", headers=headers).json()[0]["name"] == "Secondary"
+
+    trade_response = client.post(
+        "/api/trades",
+        json={
+            "account_id": account_two.json()["id"],
+            "symbol": "EURUSD",
+            "direction": "LONG",
+            "quantity": 1,
+            "entry_price": 1.1,
+            "exit_price": 1.12,
+            "entry_time": "2024-01-02T08:00:00Z",
+            "exit_time": "2024-01-02T09:00:00Z",
+            "strategy": "Trend",
+            "session": "London",
+            "market_data": {"contract_size": 100000, "currency": "USD"},
+        },
+        headers=headers,
+    )
+    assert trade_response.status_code == 201, trade_response.text
+    filtered = client.get(f"/api/trades?account_id={account_two.json()['id']}", headers=headers)
+    assert filtered.status_code == 200
+    assert len(filtered.json()) == 1
     assert client.delete("/api/users/me", headers=headers).status_code == 204
     assert client.get("/api/auth/me", headers=headers).status_code == 404
+
+
+def test_cookie_session_authentication_and_logout():
+    email = f"cookie-{uuid4().hex}@example.com"
+    response = client.post("/api/auth/register", json={"email": email, "password": "StrongPass123!", "full_name": "Cookie Trader"})
+    assert response.status_code == 201, response.text
+    assert "geng_edge_session" in response.cookies
+    cookie_client = TestClient(app)
+    cookie_client.cookies.update(response.cookies)
+    me = cookie_client.get("/api/auth/me")
+    assert me.status_code == 200, me.text
+    assert me.json()["email"] == email
+    logout = cookie_client.post("/api/auth/logout")
+    assert logout.status_code == 200
+    assert cookie_client.get("/api/auth/me").status_code == 401
