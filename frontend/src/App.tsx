@@ -444,7 +444,8 @@ function getWorkspaceMetrics(trades: Trade[]) {
 
 function AppContent() {
   const [theme, setTheme] = useState<'dark' | 'light'>(() => (localStorage.getItem('gengedge_theme') as 'dark' | 'light' | null) ?? 'dark');
-  const [token, setToken] = useState<string | null>(null);
+  const AUTH_TOKEN_KEY = 'geng_edge_access_token';
+  const [token, setToken] = useState<string | null>(() => localStorage.getItem(AUTH_TOKEN_KEY));
   const [user, setUser] = useState<AuthUser | null>(null);
   const [account, setAccount] = useState<Account | null>(null);
   const [accounts, setAccounts] = useState<Account[]>([]);
@@ -540,22 +541,12 @@ function AppContent() {
   }, [theme]);
 
   useEffect(() => {
-    let cancelled = false;
-    const bootstrap = async () => {
-      try {
-        const currentUser = await authApi.me(null);
-        if (!cancelled && currentUser) {
-          setUser(currentUser);
-          setToken('cookie-session');
-        }
-      } catch {
-        // No active session is a normal signed-out state.
-      } finally {
-        if (!cancelled && !token) setLoadingWorkspace(false);
-      }
-    };
-    if (!token) void bootstrap();
-    return () => { cancelled = true; };
+    if (!token) {
+      setLoadingWorkspace(false);
+      return;
+    }
+
+    localStorage.setItem(AUTH_TOKEN_KEY, token);
   }, [token]);
 
   useEffect(() => {
@@ -587,6 +578,7 @@ function AppContent() {
         setCalendarData(month);
       } catch (error) {
         setToken(null);
+        localStorage.removeItem(AUTH_TOKEN_KEY);
         setWorkspaceError(error instanceof Error ? error.message : 'Unable to load workspace');
       } finally {
         setLoadingWorkspace(false);
@@ -663,6 +655,7 @@ function AppContent() {
       : await authApi.register(email, password, fullName);
     setUser(response.user);
     setToken(response.access_token);
+    localStorage.setItem(AUTH_TOKEN_KEY, response.access_token);
     setLoadingWorkspace(true);
   };
 
@@ -957,6 +950,7 @@ function AppContent() {
     try {
       await usersApi.deleteAccount(token);
             setToken(null);
+      localStorage.removeItem(AUTH_TOKEN_KEY);
       setUser(null);
       setTrades([]);
     } catch (error) {
@@ -1017,7 +1011,7 @@ function AppContent() {
             <button type="button" onClick={() => setTheme((current) => current === 'dark' ? 'light' : 'dark')} className="app-icon-button" aria-label={`Switch to ${theme === 'dark' ? 'light' : 'dark'} theme`} title={`Switch to ${theme === 'dark' ? 'light' : 'dark'} theme`}>
               {theme === 'dark' ? <Sun size={16} /> : <MoonStar size={16} />}
             </button>
-            <button type="button" onClick={async () => { await authApi.logout(); setToken(null); setUser(null); setTrades([]); setAccounts([]); setAccount(null); }} className="rounded-xl border border-slate-800 bg-white/[0.02] px-3 py-2 text-sm text-slate-300 transition hover:border-slate-600 hover:text-white">Log out</button>
+            <button type="button" onClick={async () => { await authApi.logout(); setToken(null); localStorage.removeItem(AUTH_TOKEN_KEY); setUser(null); setTrades([]); setAccounts([]); setAccount(null); }} className="rounded-xl border border-slate-800 bg-white/[0.02] px-3 py-2 text-sm text-slate-300 transition hover:border-slate-600 hover:text-white">Log out</button>
             <button
               type="button"
               onClick={() => { setEditingTrade(null); setTradeActionError(''); setShowAddTrade(true); }}

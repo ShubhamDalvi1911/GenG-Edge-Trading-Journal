@@ -23,7 +23,7 @@ def _set_session_cookie(response: Response, token: str) -> None:
         value=token,
         httponly=True,
         secure=settings.environment.lower() in {"production", "prod"},
-        samesite="lax",
+        samesite="none" if settings.environment.lower() in {"production", "prod"} else "lax",
         max_age=settings.access_token_expire_minutes * 60,
         path="/",
     )
