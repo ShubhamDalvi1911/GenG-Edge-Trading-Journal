@@ -1680,3 +1680,55 @@ textarea:focus-visible {
   html { scroll-behavior: auto; }
   *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
 }
+
+/* -------------------------------------------------------------------------- */
+/* Funded account + semantic profit polish for the light theme only          */
+/* -------------------------------------------------------------------------- */
+.theme-light .funded-account-rules {
+  background: linear-gradient(145deg, rgba(255,255,255,.96), rgba(244,248,253,.98)) !important;
+  border-color: #bfd7f7 !important;
+  box-shadow: 0 14px 34px rgba(15,23,42,.055), inset 0 1px 0 rgba(255,255,255,.95);
+}
+
+.theme-light .funded-account-rules .field {
+  background: #ffffff !important;
+  color: #172033 !important;
+  border-color: #cbd5e1 !important;
+  box-shadow: 0 1px 2px rgba(15,23,42,.03);
+}
+
+.theme-light .funded-account-rules .field:hover {
+  border-color: #aebdce !important;
+}
+
+.theme-light .funded-account-rules .field:focus {
+  border-color: #3b82f6 !important;
+  box-shadow: 0 0 0 3px rgba(59,130,246,.12) !important;
+}
+
+.theme-light .funded-account-rules select.field,
+.theme-light .funded-account-rules select.field option {
+  background: #ffffff !important;
+  color: #172033 !important;
+}
+
+.theme-light .funded-account-rules input::placeholder {
+  color: #94a3b8 !important;
+  opacity: 1;
+}
+
+/* Positive/profitable values stay GenG Edge blue in light mode. */
+.theme-light [class*="text-emerald-400"],
+.theme-light [class*="text-emerald-300"],
+.theme-light [class*="text-emerald-200"] {
+  color: #2563eb !important;
+}
+
+.theme-light [class*="bg-emerald-950"] {
+  background-color: #eaf2ff !important;
+}
+
+.theme-light [class*="border-emerald-900"],
+.theme-light [class*="border-emerald-800"] {
+  border-color: #bfdbfe !important;
+}

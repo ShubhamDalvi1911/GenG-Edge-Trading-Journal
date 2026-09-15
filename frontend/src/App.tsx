@@ -224,10 +224,68 @@ function StatsPanel({ stats }: { stats: JournalStats | null }) {
 
 function MonthlyCalendar({ data, onPrevious, onNext }: { data: JournalCalendar | null; onPrevious?: () => void; onNext?: () => void }) {
   if (!data) return <EmptyWorkspace onAddTrade={() => undefined} />;
-  const firstDay = new Date(data.year, data.month - 1, 1).getDay();
+
+  const dailyByDate = new Map(data.daily.map((day) => [day.date, day]));
+  const weeklyByWeek = new Map(data.weekly.map((week) => [week.week, week.pnl]));
+  const firstDate = new Date(data.year, data.month - 1, 1);
+  const firstDay = firstDate.getDay();
   const mondayOffset = firstDay === 0 ? 6 : firstDay - 1;
-  const cells = [...Array(mondayOffset).fill(null), ...data.daily];
-  return <section className="rounded-2xl border border-slate-800 bg-slate-900/90 p-5"><div className="flex flex-wrap items-center justify-between gap-3"><div><div className="text-xs uppercase tracking-[0.22em] text-slate-400">Monthly P&L</div><h3 className="mt-1 text-xl font-semibold text-white">{new Date(data.year, data.month - 1).toLocaleString('en-US', { month: 'long', year: 'numeric' })}</h3></div><div className="flex items-center gap-4"><button type="button" onClick={onPrevious} className="rounded-lg border border-slate-700 px-3 py-1 text-slate-300 hover:border-blue-600">Previous</button><button type="button" onClick={onNext} className="rounded-lg border border-slate-700 px-3 py-1 text-slate-300 hover:border-blue-600">Next</button><div className="text-right"><div className={`text-2xl font-semibold ${getPnlTone(data.monthly_pnl)}`}>{formatCurrency(data.monthly_pnl)}</div><div className="text-xs text-slate-400">{data.trading_days} trading days</div></div></div></div><div className="mt-5 grid grid-cols-7 gap-2 text-center text-[10px] uppercase tracking-wider text-slate-500">{['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map((day) => <div key={day}>{day}</div>)}{cells.map((day, index) => day ? <div key={day.date} className={`min-h-20 rounded-xl border p-2 text-left ${day.pnl > 0 ? 'border-blue-900/70 bg-blue-950/30' : day.pnl < 0 ? 'border-red-900/70 bg-red-950/20' : 'border-slate-800 bg-slate-950/40'}`}><div className="text-xs text-slate-400">{new Date(`${day.date}T00:00:00`).getDate()}</div><div className={`mt-2 text-xs font-semibold ${getPnlTone(day.pnl)}`}>{formatCurrency(day.pnl)}</div><div className="mt-1 text-[10px] text-slate-500">{day.trades} trades</div></div> : <div key={`blank-${index}`} className="min-h-20 rounded-xl border border-transparent" />)}</div><div className="mt-5 flex flex-wrap gap-3"><div className="text-xs uppercase tracking-wider text-slate-500">Weekly P&L</div>{data.weekly.map((week) => <div key={week.week} className="rounded-lg border border-slate-800 bg-slate-950/50 px-3 py-2 text-xs text-slate-300">W{week.week}: <span className={getPnlTone(week.pnl)}>{formatCurrency(week.pnl)}</span></div>)}</div></section>;
+  const daysInMonth = new Date(data.year, data.month, 0).getDate();
+  const totalCells = Math.ceil((mondayOffset + daysInMonth) / 7) * 7;
+  const cells = Array.from({ length: totalCells }, (_, index) => {
+    const dayNumber = index - mondayOffset + 1;
+    if (dayNumber < 1 || dayNumber > daysInMonth) return null;
+    const dateValue = new Date(data.year, data.month - 1, dayNumber);
+    const isoDate = `${data.year}-${String(data.month).padStart(2, '0')}-${String(dayNumber).padStart(2, '0')}`;
+    return { dateValue, isoDate, dayNumber, day: dailyByDate.get(isoDate) };
+  });
+
+  const weeks = Array.from({ length: totalCells / 7 }, (_, rowIndex) => {
+    const rowStart = cells[rowIndex * 7];
+    const monday = rowStart?.dateValue ?? new Date(data.year, data.month - 1, 1 - mondayOffset);
+    const weekNumber = mondayDateWeek(monday);
+    const weekDays = cells.slice(rowIndex * 7, rowIndex * 7 + 7);
+    const tradingDays = weekDays.filter((cell) => cell?.day && cell.day.trades > 0).length;
+    return { weekNumber, weekDays, tradingDays, pnl: weeklyByWeek.get(weekNumber) ?? 0 };
+  });
+
+  return <section className="rounded-2xl border border-slate-800 bg-slate-900/90 p-5">
+    <div className="flex flex-wrap items-center justify-between gap-3">
+      <div><div className="text-xs uppercase tracking-[0.22em] text-slate-400">Monthly P&amp;L</div><h3 className="mt-1 text-xl font-semibold text-white">{new Date(data.year, data.month - 1).toLocaleString('en-US', { month: 'long', year: 'numeric' })}</h3></div>
+      <div className="flex items-center gap-4"><button type="button" onClick={onPrevious} className="rounded-lg border border-slate-700 px-3 py-1 text-slate-300 hover:border-blue-600">Previous</button><button type="button" onClick={onNext} className="rounded-lg border border-slate-700 px-3 py-1 text-slate-300 hover:border-blue-600">Next</button><div className="text-right"><div className={`text-2xl font-semibold ${getPnlTone(data.monthly_pnl)}`}>{formatCurrency(data.monthly_pnl)}</div><div className="text-xs text-slate-400">{data.trading_days} trading days</div></div></div>
+    </div>
+
+    <div className="mt-5 overflow-x-auto pb-1">
+      <div className="min-w-[820px]">
+        <div className="grid grid-cols-[repeat(7,minmax(0,1fr))_150px] gap-2 text-center text-[10px] uppercase tracking-wider text-slate-500">
+          {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map((day) => <div key={day}>{day}</div>)}
+          <div>Weekly</div>
+        </div>
+
+        <div className="mt-2 space-y-2">
+          {weeks.map(({ weekNumber, weekDays, tradingDays, pnl }) => <div key={weekNumber} className="grid grid-cols-[repeat(7,minmax(0,1fr))_150px] gap-2">
+            {weekDays.map((cell, index) => cell ? <div key={cell.isoDate} className={`min-h-20 rounded-xl border p-2 text-left ${cell.day?.pnl && cell.day.pnl > 0 ? 'border-blue-900/70 bg-blue-950/30' : cell.day?.pnl && cell.day.pnl < 0 ? 'border-red-900/70 bg-red-950/20' : 'border-slate-800 bg-slate-950/40'}`}>
+              <div className="text-xs text-slate-400">{cell.dayNumber}</div>
+              {cell.day ? <><div className={`mt-2 text-xs font-semibold ${getPnlTone(cell.day.pnl)}`}>{formatCurrency(cell.day.pnl)}</div><div className="mt-1 text-[10px] text-slate-500">{cell.day.trades} trades</div></> : <div className="mt-2 text-[10px] text-slate-500">No trades</div>}
+            </div> : <div key={`blank-${index}`} className="min-h-20 rounded-xl border border-transparent" />)}
+            <div className={`min-h-20 rounded-xl border p-3 text-left ${pnl > 0 ? 'border-blue-700/60 bg-blue-950/20' : pnl < 0 ? 'border-red-900/60 bg-red-950/20' : 'border-slate-800 bg-slate-950/40'}`}>
+              <div className="text-[10px] uppercase tracking-wider text-slate-500">W{weekNumber}</div>
+              <div className={`mt-2 text-sm font-semibold ${getPnlTone(pnl)}`}>{formatCurrency(pnl)}</div>
+              <div className="mt-1 text-[10px] text-slate-500">{tradingDays} trading day{tradingDays === 1 ? '' : 's'}</div>
+            </div>
+          </div>)}
+        </div>
+      </div>
+    </div>
+  </section>;
+}
+
+function mondayDateWeek(value: Date) {
+  const dateCopy = new Date(value.getFullYear(), value.getMonth(), value.getDate());
+  const day = dateCopy.getDay() || 7;
+  dateCopy.setDate(dateCopy.getDate() + 4 - day);
+  const yearStart = new Date(dateCopy.getFullYear(), 0, 1);
+  return Math.ceil((((dateCopy.getTime() - yearStart.getTime()) / 86400000) + 1) / 7);
 }
 
 function LegacyAiReportPanel({ report }: { report: AiReport | null }) {
@@ -329,7 +387,7 @@ function FundedAccountSettings({ account, token, onSaved }: { account: Account; 
       setMessage(error instanceof Error ? error.message : 'Unable to save rules.');
     } finally { setSaving(false); }
   };
-  return <div className="mb-6 rounded-2xl border border-blue-900/60 bg-blue-950/20 p-5"><div className="mb-4"><div className="text-xs uppercase tracking-[0.2em] text-blue-300">Funded Account</div><h3 className="mt-1 text-xl font-semibold text-white">Configure rule compliance</h3><p className="mt-1 text-sm text-slate-400">All dashboard values will be reconstructed from this account and stored trade net P&amp;L.</p></div><div className="grid gap-4 md:grid-cols-3"><label className="text-sm text-slate-300">Account name<input value={form.name} onChange={(event) => update('name', event.target.value)} className="field" /></label><label className="text-sm text-slate-300">Broker<input value={form.broker} onChange={(event) => update('broker', event.target.value)} placeholder="Legion Funding" className="field" /></label><label className="text-sm text-slate-300">Account type<select value={form.account_type} onChange={(event) => update('account_type', event.target.value)} className="field"><option>Funded</option><option>Challenge</option><option>Evaluation</option><option>Personal</option></select></label><label className="text-sm text-slate-300">Starting balance<input type="number" value={form.initial_balance} onChange={(event) => update('initial_balance', event.target.value)} className="field" /></label><label className="text-sm text-slate-300">Recorded current balance<input type="number" value={form.current_balance} onChange={(event) => update('current_balance', event.target.value)} className="field" /></label><label className="text-sm text-slate-300">Minimum trading days<input type="number" min="0" value={form.minimum_trading_days} onChange={(event) => update('minimum_trading_days', event.target.value)} className="field" /></label><RuleInput label="Profit target" value={form.profit_target} type={form.profit_target_type} onValue={(value) => update('profit_target', value)} onType={(value) => update('profit_target_type', value)} /><RuleInput label="Daily loss limit" value={form.daily_loss_limit} type={form.daily_loss_limit_type} onValue={(value) => update('daily_loss_limit', value)} onType={(value) => update('daily_loss_limit_type', value)} /><RuleInput label="Maximum drawdown" value={form.max_drawdown} type={form.max_drawdown_type} onValue={(value) => update('max_drawdown', value)} onType={(value) => update('max_drawdown_type', value)} /><label className="text-sm text-slate-300">Daily loss method<select value={form.daily_loss_calculation_method} onChange={(event) => update('daily_loss_calculation_method', event.target.value)} className="field"><option value="closed_trades_only">Closed trades only</option><option value="balance_based">Balance based</option><option value="equity_based">Equity based</option></select></label><label className="text-sm text-slate-300">Reset timezone<input value={form.daily_reset_timezone} onChange={(event) => update('daily_reset_timezone', event.target.value)} placeholder="Europe/London" className="field" /></label><label className="text-sm text-slate-300">Drawdown type<select value={form.drawdown_type} onChange={(event) => update('drawdown_type', event.target.value)} className="field"><option value="static">Static</option><option value="trailing">Trailing</option></select></label></div><div className="mt-5 flex items-center gap-3"><button type="button" disabled={saving} onClick={() => void save()} className="rounded-xl bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-500 disabled:opacity-60">{saving ? 'Saving...' : 'Save funded rules'}</button>{message ? <span className="text-sm text-slate-300">{message}</span> : null}</div></div>;
+  return <div className="funded-account-rules mb-6 rounded-2xl border border-blue-900/60 bg-blue-950/20 p-5"><div className="mb-4"><div className="text-xs uppercase tracking-[0.2em] text-blue-300">Funded Account</div><h3 className="mt-1 text-xl font-semibold text-white">Configure rule compliance</h3><p className="mt-1 text-sm text-slate-400">All dashboard values will be reconstructed from this account and stored trade net P&amp;L.</p></div><div className="grid gap-4 md:grid-cols-3"><label className="text-sm text-slate-300">Account name<input value={form.name} onChange={(event) => update('name', event.target.value)} className="field" /></label><label className="text-sm text-slate-300">Broker<input value={form.broker} onChange={(event) => update('broker', event.target.value)} placeholder="Legion Funding" className="field" /></label><label className="text-sm text-slate-300">Account type<select value={form.account_type} onChange={(event) => update('account_type', event.target.value)} className="field"><option>Funded</option><option>Challenge</option><option>Evaluation</option><option>Personal</option></select></label><label className="text-sm text-slate-300">Starting balance<input type="number" value={form.initial_balance} onChange={(event) => update('initial_balance', event.target.value)} className="field" /></label><label className="text-sm text-slate-300">Recorded current balance<input type="number" value={form.current_balance} onChange={(event) => update('current_balance', event.target.value)} className="field" /></label><label className="text-sm text-slate-300">Minimum trading days<input type="number" min="0" value={form.minimum_trading_days} onChange={(event) => update('minimum_trading_days', event.target.value)} className="field" /></label><RuleInput label="Profit target" value={form.profit_target} type={form.profit_target_type} onValue={(value) => update('profit_target', value)} onType={(value) => update('profit_target_type', value)} /><RuleInput label="Daily loss limit" value={form.daily_loss_limit} type={form.daily_loss_limit_type} onValue={(value) => update('daily_loss_limit', value)} onType={(value) => update('daily_loss_limit_type', value)} /><RuleInput label="Maximum drawdown" value={form.max_drawdown} type={form.max_drawdown_type} onValue={(value) => update('max_drawdown', value)} onType={(value) => update('max_drawdown_type', value)} /><label className="text-sm text-slate-300">Daily loss method<select value={form.daily_loss_calculation_method} onChange={(event) => update('daily_loss_calculation_method', event.target.value)} className="field"><option value="closed_trades_only">Closed trades only</option><option value="balance_based">Balance based</option><option value="equity_based">Equity based</option></select></label><label className="text-sm text-slate-300">Reset timezone<input value={form.daily_reset_timezone} onChange={(event) => update('daily_reset_timezone', event.target.value)} placeholder="Europe/London" className="field" /></label><label className="text-sm text-slate-300">Drawdown type<select value={form.drawdown_type} onChange={(event) => update('drawdown_type', event.target.value)} className="field"><option value="static">Static</option><option value="trailing">Trailing</option></select></label></div><div className="mt-5 flex items-center gap-3"><button type="button" disabled={saving} onClick={() => void save()} className="rounded-xl bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-500 disabled:opacity-60">{saving ? 'Saving...' : 'Save funded rules'}</button>{message ? <span className="text-sm text-slate-300">{message}</span> : null}</div></div>;
 }
 
 function NotificationSettingsPanel({ token }: { token: string | null }) {
